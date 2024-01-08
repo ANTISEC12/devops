@@ -1,0 +1,35 @@
+version: "3.9"
+services:
+  conf-restore:
+      image: alpine    
+      environment:
+        - DATE=2023_06_16_22
+        - SOURCE=confluence-home
+        - SOURCE2=confluence-install
+        - SOURCE3=confluence-postgres
+      volumes:
+        - ./backup:/backup
+        - confluence-home:/confluence-home
+        - confluence-install:/confluence-install
+        - confluence-postgres:/confluence-postgres
+      command: tail -f /dev/null
+      # command:  > 
+      #         sh -c "
+      #           rm -rf /$${SOURCE}/* &&
+      #           rm -rf /$${SOURCE2}/* &&
+      #           rm -rf /$${SOURCE3}/* &&
+      #           tar -C /$${SOURCE}/ -xzvf /backup/$${SOURCE}-$${DATE}.tar.gz &&
+      #           tar -C /$${SOURCE2}/ -xzvf /backup/$${SOURCE2}-$${DATE}.tar.gz
+      #           tar -C /$${SOURCE3}/ -xzvf /backup/$${SOURCE3}-$${DATE}.tar.gz
+      #          "
+volumes:
+  confluence-install:
+    name: confluence-install
+    external: true
+  confluence-home:
+    name: confluence-home
+    external: true
+  confluence-postgres:
+    name: confluence-postgres
+    external: true
+

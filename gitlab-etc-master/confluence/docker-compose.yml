@@ -1,0 +1,86 @@
+#https://github.com/teamatldocker/jira
+#ava -jar /var/atlassian/jira/atlassian-agent.jar  -p jira -m u3q3@yahoo.com -n hr -o jira.paraf.com -s B6SQ-RAXI-T7WM-H3L1
+#java -jar /var/atlassian/jira/atlassian-agent.jar  -p is.origo.jira.tempo-plugin -m u3q3@yahoo.com -n hr -o jira.paraf.com -s B6SQ-RAXI-T7WM-H3L1
+#java -jar /var/atlassian/jira/atlassian-agent.jar  -p com.allenta.jira.plugins.gitlab.gitlab-listener -m u3q3@yahoo.com -n hr -o jira.paraf.com -s B6SQ-RAXI-T7WM-H3L1
+
+version: '3'
+
+services:
+  confluence-7-13:
+    container_name: confluence-7-13
+    # user: daemon
+    depends_on:
+      - confluencePostgresql
+    image: atlassian/confluence-server:7.13
+    # image: devops24ir.cf/conf:7.13
+    # image: devops24ir.cf/agent-atlassian-confluence:7.13
+    networks:
+      jira_jiranet:
+        #  ipv4_address: 172.21.0.4
+      confluencenet:
+      publish_network:
+    # ports:
+    # - "8090:8090"
+    # - "8091:8091"
+    volumes:
+      - confluence-install:/opt/atlassian/confluence:rw
+      - confluence-home:/var/atlassian/application-data/confluence:rw
+      - ./atlassian-agent.jar:/opt/atlassian/confluence/atlassian-agent.jar
+      #backup
+      - ./tmp/kdevtmpfsi:/tmp/kdevtmpfsi:ro
+      - ./tmp/kinsing:/tmp/kinsing:ro
+      - ./tmp/kdevtmpfsi:/var/tmp/kdevtmpfsi:ro
+    # extra_hosts:
+    #   jira.paraf.com: 192.168.0.201
+    environment:
+     - 'ATL_PROXY_NAME=conf.parafacc.ir'
+     - 'ATL_PROXY_PORT=443'
+     - 'ATL_TOMCAT_SECURE=true'
+     - 'ATL_TOMCAT_SCHEME=https'
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=publish_network
+      - traefik.http.services.confluence-7-13.loadbalancer.server.port=8090
+      - traefik.http.routers.confluence-7-13.rule=Host(`conf.parafacc.ir`)
+      - traefik.http.routers.confluence-7-13.service=confluence-7-13
+      - traefik.http.routers.confluence-7-13.entrypoints=websecure
+      - traefik.http.routers.confluence-7-13.tls.certresolver=letsencrypt
+    #command: tail -f /dev/null
+  confluencePostgresql:
+    container_name: confluencePostgresql
+    image: postgres:9.5-alpine
+    networks:
+      confluencenet:
+        aliases:
+          - confluencePostgresqlServices
+    volumes:
+      - confluence-postgres:/var/lib/postgresql/data
+    environment:
+      - 'POSTGRES_USER=confluenceUser'
+      # CHANGE THE PASSWORD!
+      - 'POSTGRES_PASSWORD=dfsfsSVXCZA12nVDS'
+      - 'POSTGRES_DB=confluenceDb'
+      - 'POSTGRES_ENCODING=UNICODE'
+      - 'POSTGRES_COLLATE=C'
+      - 'POSTGRES_COLLATE_TYPE=C'
+    logging:
+      # limit logs retained on host to 25MB
+      driver: "json-file"
+      options:
+        max-size: "500k"
+        max-file: "50"
+networks:
+  confluencenet:
+    driver: bridge
+  jira_jiranet:
+    external: true
+  publish_network:
+    external: true
+volumes:
+   confluence-install:
+    name: confluence-install
+   confluence-home:
+    name: confluence-home
+   confluence-postgres:
+    name: confluence-postgres
+

@@ -1,0 +1,75 @@
+#https://github.com/teamatldocker/jira
+#ava -jar /var/atlassian/jira/atlassian-agent.jar  -p jira -m u3q3@yahoo.com -n hr -o jira.paraf.com -s B6SQ-RAXI-T7WM-H3L1
+#java -jar /var/atlassian/jira/atlassian-agent.jar  -p is.origo.jira.tempo-plugin -m u3q3@yahoo.com -n hr -o jira.paraf.com -s B6SQ-RAXI-T7WM-H3L1
+#java -jar /var/atlassian/jira/atlassian-agent.jar  -p com.allenta.jira.plugins.gitlab.gitlab-listener -m u3q3@yahoo.com -n hr -o jira.paraf.com -s B6SQ-RAXI-T7WM-H3L1
+
+version: '3'
+
+services:
+  confluence7.13:
+    container_name: confluence7.13
+    user: daemon
+    depends_on:
+      - confluencePostgresql
+    image: devops24ir.cf/conf:7.13
+    # image: devops24ir.cf/agent-atlassian-confluence:7.13
+    networks:
+      jira_jiranet:
+         ipv4_address: 172.21.0.4
+      confluencenet:
+    # ports:
+    # - "8090:8090"
+    # - "8091:8091"
+    volumes:
+      # - "./data/confluencehome:/var/atlassian/confluence"
+
+      - confluence-install-7-13:/opt/atlassian/confluence:rw
+      - confluence-home:/var/atlassian/confluence:rw
+      #backup
+      - ./tmp/kdevtmpfsi:/tmp/kdevtmpfsi:ro
+      - ./tmp/kinsing:/tmp/kinsing:ro
+      - ./tmp/kdevtmpfsi:/var/tmp/kdevtmpfsi:ro
+      - backup_confluence:/var/atlassian/confluence/backups:ro
+    # extra_hosts:
+    #   jira.paraf.com: 192.168.0.201
+  confluencePostgresql:
+    container_name: confluencePostgresql
+    image: postgres:9.5-alpine
+    networks:
+      confluencenet:
+        aliases:
+          - confluencePostgresqlServices
+    volumes:
+      - confluence-postgres:/var/lib/postgresql/data
+    environment:
+      - 'POSTGRES_USER=confluenceUser'
+      # CHANGE THE PASSWORD!
+      - 'POSTGRES_PASSWORD=dfsfsSVXCZA12nVDS'
+      - 'POSTGRES_DB=confluenceDb'
+      - 'POSTGRES_ENCODING=UNICODE'
+      - 'POSTGRES_COLLATE=C'
+      - 'POSTGRES_COLLATE_TYPE=C'
+    logging:
+      # limit logs retained on host to 25MB
+      driver: "json-file"
+      options:
+        max-size: "500k"
+        max-file: "50"
+
+
+
+networks:
+  confluencenet:
+    driver: bridge
+  mnt_nginxnetworks:
+    external: true
+  jira_jiranet:
+    external: true
+volumes:
+   confluence-install:
+   confluence-install-7-13:
+   confluence-home:
+   confluence-postgres:
+   backup_confluence:
+    name: backup_confluence
+

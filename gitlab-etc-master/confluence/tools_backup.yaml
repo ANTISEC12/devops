@@ -1,0 +1,40 @@
+  confluence-backup:
+    image: alpine 
+    tty: false
+    environment:
+      - TZ=Asia/Tehran
+      - TARGET=confluence-home
+      - TARGET2=confluence-install
+      - TARGET3=confluence-postgres
+    volumes:
+      - ./backup:/backup
+      - confluence-home:/confluence-home:ro
+      - confluence-install-7-13:/confluence-install:ro
+      - confluence-postgres:/confluence-postgres:ro
+      # find /backup/ -type f -mtime +7 -name '*.tar.gz' -execdir rm  -- '{}' \ &&
+    command: >
+              sh -c "curent=$$(date +"%Y_%m_%d_%H")&&
+              echo $$curent && 
+              rm  -f /backup/$${TARGET}-$${curent}.*  && 
+              rm  -f  /backup/$${TARGET2}-$${curent}.*  && 
+              rm  -f  /backup/$${TARGET3}-$${curent}.*   &&
+              tar -cvf /backup/$${TARGET}-$${curent}.tar  /$${TARGET}  && 
+              gzip /backup/$${TARGET}-$${curent}.tar &&
+              tar -cvf /backup/$${TARGET2}-$${curent}.tar /$${TARGET2} &&
+              gzip /backup/$${TARGET2}-$${curent}.tar &&
+              tar -cvf /backup/$${TARGET3}-$${curent}.tar /$${TARGET3} &&
+              gzip /backup/$${TARGET3}-$${curent}.tar
+               "
+        
+
+               "
+volumes:
+   confluence-install:
+    name: confluence-install
+    external: true
+   confluence-home:
+    name: confluence-home
+    external: true
+   confluence-postgres:
+    name: confluence-postgres
+    external: true

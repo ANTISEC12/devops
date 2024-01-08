@@ -1,0 +1,38 @@
+version: '3'
+services:
+#https://stackoverflow.com/questions/26331651  
+  jira-backup:
+    image: alpine    
+    tty: false
+    environment:
+      - TARGET=volume-jira-bin
+      - TARGET2=volume-jira-data
+      - TARGET3=volume-postgresqldata
+    volumes:
+      - ./backup:/backup
+      - jira-bin:/volume-jira-bin:ro
+      - jira-data:/volume-jira-data:ro
+      - jira-postgresqldata:/volume-postgresqldata:ro
+
+    command: >
+              sh -c "curent=$$(date +"%Y_%m_%d_%H")&&
+              echo $$curent && 
+              rm  -f /backup/$${TARGET}-$${curent}.*  && 
+              rm  -f  /backup/$${TARGET2}-$${curent}.*  && 
+              rm  -f  /backup/$${TARGET3}-$${curent}.*   &&
+              tar -cvf /backup/$${TARGET}-$${curent}.tar  /$${TARGET}  && 
+              gzip /backup/$${TARGET}-$${curent}.tar &&
+              tar -cvf /backup/$${TARGET2}-$${curent}.tar  /$${TARGET2}  && 
+              gzip /backup/$${TARGET2}-$${curent}.tar &&
+              tar -cvf /backup/$${TARGET3}-$${curent}.tar /$${TARGET3} &&
+              gzip /backup/$${TARGET3}-$${curent}.tar "
+volumes:
+  jira-data:
+    name: jira-data
+    external: true
+  jira-bin:
+    name: jira-bin
+    external: true
+  jira-postgresqldata:
+    name: jira-postgresqldata
+    external: true

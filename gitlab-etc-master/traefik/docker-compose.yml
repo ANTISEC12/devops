@@ -1,0 +1,133 @@
+# https://greenfrognest.com/LMDSTraefikProxy.php
+version: "3.9"
+
+services:
+  traefik_gateway:
+    image: traefik:latest
+    environment:
+      - TZ=Asia/Tehran
+      - CF_API_EMAIL=USER@gmail.com
+      - CF_API_KEY=30fa6bc7d2b7dfb8f
+    #image: traefik_gateway:${CI_COMMIT_SHORT_SHA}
+    #build: 
+    #  context: .
+    #  dockerfile: Dockerfile
+    #  args:
+    #    TZ: Asia/Tehran
+    #    CF_API_EMAIL: MAil8@gmail.com
+    #    CF_API_KEY: 30fa6bc7d2b7dfb8f
+    command:
+      - --api.insecure=true
+      - --api.dashboard=true
+
+      - --accesslog=true
+      - --global.checkNewVersion=true               # ? Periodically check for update - (Default: true)
+      - --log.level=DEBUG                           # ? Log level - (Default: ERROR) other logging levels are DEBUG, PANIC, FATAL, ERROR, WARN, and INFO.
+      #- --log.filePath=/logs/traefik.log            # ? Log path - optional - related to volume /logs defined above
+      #- --accessLog.filePath=/logs/access.log       # ? Log path - optional - related to volume /logs defined above
+      #- --accessLog.bufferingSize=100               # ? Log size - optional
+
+      - --providers.file.directory=/traefik
+      - --providers.file.watch=true
+
+      # Docker
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.endpoint=unix:///var/run/docker.sock
+      
+      # Entrypoints
+      #- --entryPoints.console.address=:8080
+      - --entryPoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      #- --entryPoints.websecure.http2
+      # - --entrypoints.websecure.http3
+      
+      # - --experimental.http3=true 
+
+      # Redirection to SSL
+      - --entryPoints.web.http.redirections.entryPoint.to=websecure     # ^ If trying to access service using port 80 redirect to 443
+      - --entryPoints.web.http.redirections.entryPoint.scheme=https     # ^ If trying to access service using http redirect to https
+      - --entryPoints.web.http.redirections.entrypoint.permanent=true   # ^ Apply a permanent redirection.
+
+      # LetsEncrypt (https://doc.traefik.io/traefik/user-guides/docker-compose/acme-tls/)
+      
+      # Put your email address - the same as above in "CF_API_EMAIL"
+      - --certificatesResolvers.letsencrypt.acme.email=Mail@gmail.com
+      - --certificatesResolvers.letsencrypt.acme.storage=acme/acme.json
+      
+      # Uncomment if you want check with develop server
+      # If uncommented this line then Cloudflare Full(Trust) must be change to Full status.
+      # - --certificatesresolvers.letsencrypt.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
+      
+      # https://doc.traefik.io/traefik/https/acme/#dnschallenge
+      - --certificatesResolvers.letsencrypt.acme.dnsChallenge=true
+      
+      # https://doc.traefik.io/traefik/https/acme/#providers
+      - --certificatesResolvers.letsencrypt.acme.dnsChallenge.provider=cloudflare
+
+      # GeoBlock
+      - --experimental.plugins.geoblock.modulename=github.com/PascalMinder/geoblock
+      - --experimental.plugins.geoblock.version=v0.2.5
+      
+      # Log4Shell
+      - --experimental.plugins.plugin-log4shell.modulename=github.com/traefik/plugin-log4shell
+      - --experimental.plugins.plugin-log4shell.version=v0.1.2
+
+      # Exceptions for Basic Auth
+      - --experimental.plugins.traefik-plugin-exception-authbasic.modulename=github.com/kingjan1999/traefik-plugin-exception-authbasic
+      - --experimental.plugins.traefik-plugin-exception-authbasic.version=v1.0.2
+
+      # Simple Cache
+      - --experimental.plugins.plugin-simplecache.modulename=github.com/traefik/plugin-simplecache
+      - --experimental.plugins.plugin-simplecache.version=v0.2.1
+
+      # Cloudflare
+      - --experimental.plugins.traefik-cloudflare-plugin.modulename=github.com/Desuuuu/traefik-cloudflare-plugin
+      - --experimental.plugins.traefik-cloudflare-plugin.version=v1.0.0
+
+      # TorBlock
+      - --experimental.plugins.torblock.modulename=github.com/jpxd/torblock
+      - --experimental.plugins.torblock.version=v0.1.1
+
+      # Modsecurity Plugin
+      - --experimental.plugins.traefik-modsecurity-plugin.modulename=github.com/acouvreur/traefik-modsecurity-plugin
+      - --experimental.plugins.traefik-modsecurity-plugin.version=v1.2.1
+    
+    #labels:
+      #- traefik.enable=true
+      
+      # https://hostingcanada.org/htpasswd-generator/
+      # https://doc.traefik.io/traefik/middlewares/basicauth/
+      # Tip: add more $ before each $ character. $$ means of $ character.
+      #- traefik.http.middlewares.traefik_gateway_limitation.basicauth.users=pex_user:$$2y$$10$$ec1QrkV8ZN0WpNyILGFjv.qSsuX.YCxnBj0a4RaahWP.D/3RSVisC
+
+      # https://github.com/acouvreur/traefik-modsecurity-plugin/blob/main/docker-compose.yml
+      #- traefik.http.middlewares.waf.plugin.traefik-modsecurity-plugin.modSecurityUrl=http://waf:80
+      #- traefik.http.middlewares.waf.plugin.traefik-modsecurity-plugin.maxBodySize=10485760
+
+      #- traefik.http.routers.traefik_gateway.service=api@internal
+      #- traefik.http.services.traefik_gateway.loadbalancer.server.port=8080
+      #- traefik.http.routers.traefik_gateway.rule=Host(`Domain.com`)
+      #- traefik.http.routers.traefik_gateway.entryPoints=websecure
+      #- traefik.http.routers.traefik_gateway.middlewares=traefik_gateway_limitation
+      #- traefik.http.routers.traefik_gateway.tls.certresolver=letsencrypt
+
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - publish_network
+
+    ports:
+      - 80:80
+      - 443:443
+      - 9090:8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./acme:/acme
+      - ./config:/traefik
+      - ./logs:/logs
+
+networks:
+  publish_network:
+    external: true
+

@@ -1,0 +1,63 @@
+version: '3'
+
+services:
+  registry:
+    # restart: always
+    image: registry:2
+    # ports:
+    # - "5000:5000"
+    expose:
+      - "5000"
+    environment:
+      REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /data
+      REGISTRY_AUTH: htpasswd
+      REGISTRY_AUTH_HTPASSWD_REALM: Registry
+      REGISTRY_AUTH_HTPASSWD_PATH: ./auth/registry.password
+    volumes:
+      - registry_data:/data:rw
+      - ./auth:/auth
+      - ./config.yml:/etc/docker/registry/config.yml
+#      - ./temp:/backup
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=publish_network
+      - traefik.http.services.registry.loadbalancer.server.port=5000
+      - traefik.http.routers.registry.rule=Host(`reg.parafacc.ir`) && PathPrefix(`/v2`)
+      - traefik.http.routers.registry.service=registry
+      - traefik.http.routers.registry.entrypoints=websecure
+      - traefik.http.routers.registry.tls.certresolver=letsencrypt
+      - traefik.http.routers.registry.middlewares=my-plugin-log4shell@file,my-torblock@file,my-traefik-cloudflare-plugin@file
+    networks:
+      - publish_network
+
+  registry_ui:
+    image: joxit/docker-registry-ui:latest
+    # ports:
+    #   - 82:80
+    expose:
+      - "80"
+    environment:
+      - REGISTRY_TITLE=Paraf Docker Registry
+      - REGISTRY_URL=https://reg.parafacc.ir
+      - SINGLE_REGISTRY=true
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=publish_network
+      - traefik.http.services.registry_ui.loadbalancer.server.port=80
+      - traefik.http.routers.registry_ui.rule=Host(`reg.parafacc.ir`)
+      - traefik.http.routers.registry_ui.service=registry_ui
+      - traefik.http.routers.registry_ui.entrypoints=websecure
+      - traefik.http.routers.registry_ui.tls.certresolver=letsencrypt
+      - traefik.http.routers.registry_ui.middlewares=my-plugin-log4shell@file,my-torblock@file,my-traefik-cloudflare-plugin@file
+    networks:
+      - publish_network
+networks:
+  # mnt_nginxnetworks:
+  #  external: true
+  publish_network:
+    external: true
+volumes:
+  registry_data:
+  #/etc/letsencrypt/live/
+  # backup_registry:
+  #    name: backup_registry

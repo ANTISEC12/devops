@@ -1,0 +1,58 @@
+version: "3.9" # optional since v1.27.0
+services:
+  gitlab_ce:
+    # image: 'reg.parafacc.ir/gitlab/gitlab-ce:15.4.6-ce.0'
+    #image: 'gitlab/gitlab-ce:15.9.0-ce.0'
+    image: 'gitlab/gitlab-ce:latest'
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.gitlab_ce.loadbalancer.server.port=80
+      - traefik.http.routers.gitlab_ce.rule=Host(`git.parafacc.ir`)
+      - traefik.http.routers.gitlab_ce.service=gitlab_ce
+      - traefik.http.routers.gitlab_ce.entrypoints=websecure
+      - traefik.http.routers.gitlab_ce.tls.certresolver=letsencrypt
+
+      # - traefik.http.middlewares.limit.buffering.maxRequestBodyBytes=20000000
+      # - traefik.http.middlewares.limit.buffering.maxResponseBodyBytes=20000000
+      # - traefik.http.middlewares.limit.buffering.memRequestBodyBytes=20000000
+      # - traefik.http.middlewares.limit.buffering.memResponseBodyBytes=20000000
+
+      - traefik.http.routers.gitlab_ce.middlewares=my-plugin-log4shell@file,my-torblock@file,my-traefik-cloudflare-plugin@file
+
+    restart: always
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'https://git.parafacc.ir'
+        nginx['client_max_body_size'] = "10m"
+        nginx['listen_https'] = false
+        nginx['listen_port'] = 80
+        nginx['proxy_set_headers'] = {
+          "X-Forwarded-Proto" => "https",
+          "X-Forwarded-Ssl" => "on"
+        }
+        # Add any other gitlab.rb configuration here, each on its own line
+        ## Limit backup lifetime to 7 days - 604800 seconds
+        gitlab_rails['backup_keep_time'] = 3600
+        letsencrypt['contact_emails'] = ['a28028@gmail.com']
+        letsencrypt['enable'] = false
+    volumes:
+      # - './storage/config:/etc/gitlab'
+      - './storage/logs:/var/log/gitlab'
+      - 'gitlab-data-fix:/var/opt/gitlab'
+      # - ./secrets/gitlab-secrets.json:/etc/gitlab/gitlab-secrets.json:rw
+      -  'gitlab-etc:/etc/gitlab'
+
+
+    networks:
+      - publish_network
+
+  
+
+
+networks:
+  publish_network:
+    external: true
+
+volumes:
+  gitlab-data-fix:
+  gitlab-etc:

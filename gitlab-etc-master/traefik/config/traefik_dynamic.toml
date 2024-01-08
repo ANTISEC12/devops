@@ -1,0 +1,57 @@
+[http]
+
+  [http.middlewares]
+
+    [http.middlewares.my-traefik-plugin-exception-authbasic]
+      [http.middlewares.my-traefik-plugin-exception-authbasic.plugin]
+        [http.middlewares.my-traefik-plugin-exception-authbasic.plugin.traefik-plugin-exception-authbasic]
+          AllowIPs = "185.242.161.212"
+          PreventUser = "true"
+          User = "user"
+          Password = "password"
+
+    [http.middlewares.my-geoblock]
+      [http.middlewares.my-geoblock.plugin]
+        [http.middlewares.my-geoblock.plugin.geoblock]
+          allowLocalRequests = "false"
+          allowUnknownCountries = "false"
+          api = "https://get.geojs.io/v1/ip/country/{ip}"
+          apiTimeoutMs = "500"
+          cacheSize = "1024"
+          countries = ["IR"]
+          forceMonthlyUpdate = "true"
+          logAllowedRequests = "true"
+          logApiRequests = "true"
+          logLocalRequests = "false"
+          unknownCountryApiResponse = "nil"
+
+    [http.middlewares.my-plugin-log4shell]
+      [http.middlewares.my-plugin-log4shell.plugin]
+        [http.middlewares.my-plugin-log4shell.plugin.plugin-log4shell]
+          errorCode = "200"
+
+    [http.middlewares.my-plugin-simplecache]
+      [http.middlewares.my-plugin-simplecache.plugin]
+        [http.middlewares.my-plugin-simplecache.plugin.plugin-simplecache]
+          path = "/tmp"
+          maxExpiry = 3600
+          cleanup = 7200
+
+    [http.middlewares.my-cloudflareip]
+      [http.middlewares.my-cloudflareip.plugin]
+        [http.middlewares.my-cloudflareip.plugin.cloudflareip]
+          trustip = ["103.21.244.0/22", "103.22.200.0/22", "103.31.4.0/22", "104.16.0.0/13", "104.24.0.0/14", "108.162.192.0/18", "131.0.72.0/22", "141.101.64.0/18", "162.158.0.0/15", "172.64.0.0/13", "173.245.48.0/20", "188.114.96.0/20", "190.93.240.0/20", "197.234.240.0/22", "198.41.128.0/17", "2400:cb00::/32", "2606:4700::/32", "2803:f800::/32", "2405:b500::/32", "2405:8100::/32", "2a06:98c0::/29", "2c0f:f248::/32"]
+
+    [http.middlewares.my-traefik-cloudflare-plugin]
+      [http.middlewares.my-traefik-cloudflare-plugin.plugin]
+        [http.middlewares.my-traefik-cloudflare-plugin.plugin.traefik-cloudflare-plugin]
+          overwriteForwardedFor = "true"
+          refreshInterval = "24h"
+          trustedCIDRs = ""
+
+    [http.middlewares.my-torblock]
+      [http.middlewares.my-torblock.plugin]
+        [http.middlewares.my-torblock.plugin.torblock]
+          AddressListURL = "https://check.torproject.org/exit-addresses"
+          Enabled = "true"
+          UpdateInterval = "3600"

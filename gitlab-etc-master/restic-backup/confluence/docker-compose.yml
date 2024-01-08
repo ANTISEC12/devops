@@ -1,0 +1,30 @@
+version: '3'
+
+services:
+  restic:
+    image: lobaro/restic-backup-docker:latest
+    hostname: nas                                     # This will be visible in restic snapshot list
+    restart: always
+    privileged: true
+    volumes:
+      - confluence-install:/data/Backup/confluence-install:ro 
+      - confluence-home:/data/Backup/confluence-home:ro 
+      - confluence-postgres:/data/Backup/confluence-postgres:ro 
+      - ./data:/data/home:ro 
+    environment:
+      - AWS_ACCESS_KEY_ID=9892ae11-6a41-4276-b66e-bfb6acb62f4e
+      - AWS_SECRET_ACCESS_KEY=8c6fa042f0c518d0b1e5af9a97fad81965f2e965e1fce3d9ca549d684fb0369b
+      - RESTIC_REPOSITORY=s3:https://s3.ir-thr-at1.arvanstorage.ir/restic-backup-confluence
+      - RESTIC_PASSWORD=passwordForRestic                  # Password restic uses for encryption
+      - BACKUP_CRON=0 22 * * 0                             # Start backup every Sunday 22:00 UTC
+      - CHECK_CRON=0 22 * * 3                              # Start check every Wednesday 22:00 UTC
+      - RESTIC_DATA_SUBSET=50G                             # Download 50G of data from "storageserver" every Wednesday 22:00 UTC and check the data integrity
+      - RESTIC_FORGET_ARGS=--prune --keep-last 12          # Only keep the last 12 snapshots
+
+volumes:
+   confluence-install:
+    name: confluence-install
+   confluence-home:
+    name: confluence-home
+   confluence-postgres:
+    name: confluence-postgres
